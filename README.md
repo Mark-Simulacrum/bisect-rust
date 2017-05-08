@@ -8,7 +8,7 @@ will be replaced with a checkout of the rust-lang/rust repo). Then, the recommen
 get Docker, and run the following command:
 
 ```
-RUST_LOG=rustc_perf_collector=info \
+RUST_LOG=bisect_rust=info \
     GH_API_TOKEN=TOKEN_HERE \
     cargo run -- --preserve --triple x86_64-unknown-linux-gnu --test test.sh
 ```
