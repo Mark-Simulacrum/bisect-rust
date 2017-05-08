@@ -12,7 +12,7 @@ use flate2::bufread::GzDecoder;
 use reqwest;
 use tar::Archive;
 
-use github::Commit;
+use git::Commit;
 
 use errors::{Result, ResultExt};
 

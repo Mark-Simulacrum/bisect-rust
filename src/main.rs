@@ -9,12 +9,15 @@ extern crate tar;
 extern crate env_logger;
 #[macro_use] extern crate log;
 extern crate reqwest;
+extern crate git2;
+extern crate hex;
 extern crate chrono;
 
 mod errors {
     // Create the Error, ErrorKind, ResultExt, and Result types
     error_chain! {
         foreign_links {
+            Git2(::git2::Error);
             Reqwest(::reqwest::Error);
             Io(::std::io::Error);
         }
@@ -28,10 +31,10 @@ quick_main!(run);
 use std::path::Path;
 use std::process::Command;
 
-mod github;
+mod git;
 mod sysroot;
 
-use github::Commit;
+use git::Commit;
 use sysroot::Sysroot;
 
 // return true if commit is successfully broken
@@ -92,10 +95,10 @@ fn run() -> Result<i32> {
     };
 
     const START: &str = "927c55d86b0be44337f37cf5b0a76fb8ba86e06c";
+    const END: &str = "master";
 
-    let client = reqwest::Client::new()?;
-    println!("Getting commits from GH");
-    let commits = github::get_commits_since(&client, START)?;
+    println!("Getting commits from the git checkout");
+    let commits = try!(git::get_commits_between(START, END));
     assert_eq!(commits.first().expect("at least one commit").sha, START);
     println!("Searching in {} commits; about {} steps",
         commits.len(),
