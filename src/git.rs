@@ -16,6 +16,7 @@ pub struct Commit {
 }
 
 impl Commit {
+    // Takes &mut because libgit2 internally caches summaries
     fn from_git2_commit(commit: &mut Git2Commit) -> Self {
         Commit {
             id: commit.id(),
@@ -28,27 +29,30 @@ impl Commit {
     }
 }
 fn lookup_rev<'rev>(repo: &'rev Repository, rev: &str) -> Result<Git2Commit<'rev>> {
-    if let Ok(c) = try!(repo.revparse_single(rev)).into_commit() {
+    if let Ok(c) = repo.revparse_single(rev)?.into_commit() {
         return Ok(c);
     }
-    bail!("Could not find a commit for revision specifier '{}'", rev);
+    bail!("Could not find a commit for revision specifier '{}'", rev)
 }
 
 /// Returns the bors merge commits between the two specified boundaries
 /// (boundaries inclusive).
 pub fn get_commits_between(first_commit: &str, last_commit: &str) -> Result<Vec<Commit>> {
-    let repo = try!(Repository::open(RUST_SRC_REPO));
-    let mut first = try!(lookup_rev(&repo, first_commit));
-    let last = try!(lookup_rev(&repo, last_commit));
+    let repo = Repository::open(RUST_SRC_REPO)?;
+    let mut first = lookup_rev(&repo, first_commit)?;
+    let last = lookup_rev(&repo, last_commit)?;
 
     // Sanity check -- our algorithm below only works reliably if the
     // two commits are merge commits made by bors
-    let made_by_bors = |c: &Git2Commit| {
-        c.author().name().map_or(false, |a| a == "bors")
+    let assert_by_bors = |c: &Git2Commit| -> Result<()> {
+        match c.author().name() {
+            Some("bors") => Ok(()),
+            Some(author) => bail!("Expected author {} to be bors for {}", author, c.id()),
+            None => bail!("No author for {}", c.id()),
+        }
     };
-    if !(made_by_bors(&first) && made_by_bors(&last)) {
-        bail!("The first and last commit need to be authored by bors");
-    }
+    assert_by_bors(&first)?;
+    assert_by_bors(&last)?;
     // Now find the commits
     // We search from the last and always take the first of its parents,
     // to only get merge commits.
@@ -57,6 +61,7 @@ pub fn get_commits_between(first_commit: &str, last_commit: &str) -> Result<Vec<
     let mut res = Vec::new();
     let mut current = last;
     loop {
+        assert_by_bors(&current)?;
         res.push(Commit::from_git2_commit(&mut current));
         match current.parents().next() {
             Some(c) => {
