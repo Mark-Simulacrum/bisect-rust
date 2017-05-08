@@ -42,7 +42,7 @@ impl Sysroot {
     }
 
     pub fn install(commit: &Commit, triple: &str, preserve: bool) -> Result<Self> {
-        let sha : &str = &commit.sha;
+        let sha : &str = &commit.sha();
         let unpack_into = format!("rust-{}", sha);
 
         let cargo_sha = if commit.date < UTC.ymd(2017, 3, 20).and_hms(0, 0, 0) {

@@ -6,25 +6,27 @@ use chrono::{DateTime, TimeZone, UTC};
 
 use errors::Result;
 
-use hex::ToHex;
-
-use git2::{Repository, Commit as Git2Commit};
+use git2::{Repository, Oid, Commit as Git2Commit};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Commit {
-    pub sha: String,
+    pub id: Oid,
     pub date: DateTime<UTC>,
+    pub summary: String,
 }
 
 impl Commit {
-    fn from_git2_commit(commit: &Git2Commit) -> Self {
+    fn from_git2_commit(commit: &mut Git2Commit) -> Self {
         Commit {
-            sha: commit.id().as_bytes().to_hex(),
+            id: commit.id(),
             date: UTC.timestamp(commit.time().seconds(), 0),
+            summary: String::from(commit.summary().unwrap()),
         }
     }
+    pub fn sha(&self) -> String {
+        format!("{}", self.id)
+    }
 }
-
 fn lookup_rev<'rev>(repo: &'rev Repository, rev: &str) -> Result<Git2Commit<'rev>> {
     if let Ok(c) = try!(repo.revparse_single(rev)).into_commit() {
         return Ok(c);
@@ -36,7 +38,7 @@ fn lookup_rev<'rev>(repo: &'rev Repository, rev: &str) -> Result<Git2Commit<'rev
 /// (boundaries inclusive).
 pub fn get_commits_between(first_commit: &str, last_commit: &str) -> Result<Vec<Commit>> {
     let repo = try!(Repository::open(RUST_SRC_REPO));
-    let first = try!(lookup_rev(&repo, first_commit));
+    let mut first = try!(lookup_rev(&repo, first_commit));
     let last = try!(lookup_rev(&repo, last_commit));
 
     // Sanity check -- our algorithm below only works reliably if the
@@ -55,7 +57,7 @@ pub fn get_commits_between(first_commit: &str, last_commit: &str) -> Result<Vec<
     let mut res = Vec::new();
     let mut current = last;
     loop {
-        res.push(Commit::from_git2_commit(&current));
+        res.push(Commit::from_git2_commit(&mut current));
         match current.parents().next() {
             Some(c) => {
                 current = c;
@@ -67,7 +69,7 @@ pub fn get_commits_between(first_commit: &str, last_commit: &str) -> Result<Vec<
             None => bail!("reached end of repo without encountering the first commit"),
         }
     }
-    res.push(Commit::from_git2_commit(&first));
+    res.push(Commit::from_git2_commit(&mut first));
     // Reverse in order to obtain chronological order
     res.reverse();
     Ok(res)
