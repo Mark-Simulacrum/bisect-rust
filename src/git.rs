@@ -28,6 +28,7 @@ impl Commit {
         format!("{}", self.id)
     }
 }
+
 fn lookup_rev<'rev>(repo: &'rev Repository, rev: &str) -> Result<Git2Commit<'rev>> {
     if let Ok(c) = repo.revparse_single(rev)?.into_commit() {
         return Ok(c);
@@ -65,6 +66,11 @@ pub fn get_commits_between(first_commit: &str, last_commit: &str) -> Result<Vec<
         res.push(Commit::from_git2_commit(&mut current));
         match current.parents().next() {
             Some(c) => {
+                if c.author().name() != Some("bors") {
+                    warn!("{:?} has non-bors author: {:?}, skipping", c.id(), c.author().name());
+                    current = c.parents().next().unwrap();
+                    continue;
+                }
                 current = c;
                 if current.id() == first.id() {
                     // Reached the first commit, our end of the search.
