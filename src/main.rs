@@ -4,6 +4,7 @@
 extern crate serde;
 extern crate serde_json;
 #[macro_use] extern crate error_chain;
+extern crate xz2;
 extern crate flate2;
 extern crate tar;
 extern crate env_logger;

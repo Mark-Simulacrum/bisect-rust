@@ -9,10 +9,11 @@ dependencies = [
  "flate2 0.2.19 (registry+https://github.com/rust-lang/crates.io-index)",
  "git2 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "reqwest 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "reqwest 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tar 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "xz2 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -83,6 +84,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "bitflags"
 version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "byteorder"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -316,6 +322,14 @@ version = "0.2.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "libflate"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "libgit2-sys"
 version = "0.6.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -356,6 +370,16 @@ dependencies = [
 name = "log"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "lzma-sys"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "filetime 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "gcc 0.3.45 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.22 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "matches"
@@ -505,11 +529,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "reqwest"
-version = "0.4.0"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "hyper 0.10.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper-native-tls 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libflate 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 0.9.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 0.9.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -788,6 +813,14 @@ dependencies = [
  "libc 0.2.22 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
+[[package]]
+name = "xz2"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "lzma-sys 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
 [metadata]
 "checksum advapi32-sys 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e06588080cb19d0acb6739808aafa5f26bfb2ca015b2b6370028b44cf7cb8a9a"
 "checksum aho-corasick 0.6.3 (registry+https://github.com/rust-lang/crates.io-index)" = "500909c4f87a9e52355b26626d890833e9e1d53ac566db76c36faa984b889699"
@@ -798,6 +831,7 @@ dependencies = [
 "checksum backtrace-sys 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)" = "d192fd129132fbc97497c1f2ec2c2c5174e376b95f535199ef4fe0a293d33842"
 "checksum bitflags 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "aad18937a628ec6abcd26d1489012cc0e18c21798210f491af69ded9b881106d"
 "checksum bitflags 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1370e9fc2a6ae53aea8b7a5110edbd08836ed87c88736dfabccade1c2b44bff4"
+"checksum byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c40977b0ee6b9885c9013cd41d9feffdd22deb3bb4dc3a71d901cc7a77de18c8"
 "checksum cfg-if 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "de1e760d7b6535af4241fca8bd8adf68e2e7edacc6b29f5d399050c5e48cf88c"
 "checksum chrono 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d9123be86fd2a8f627836c235ecdf331fdd067ecf7ac05aa1a68fbcf2429f056"
 "checksum clap 2.24.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b7541069be0b8aec41030802abe8b5cdef0490070afaa55418adea93b1e431e0"
@@ -825,10 +859,12 @@ dependencies = [
 "checksum language-tags 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a91d884b6667cd606bb5a69aa0c99ba811a115fc68915e7056ec08a46e93199a"
 "checksum lazy_static 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "3b37545ab726dd833ec6420aaba8231c5b320814b9029ad585555d2a03e94fbf"
 "checksum libc 0.2.22 (registry+https://github.com/rust-lang/crates.io-index)" = "babb8281da88cba992fa1f4ddec7d63ed96280a1a53ec9b919fd37b53d71e502"
+"checksum libflate 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "a7aa60ce680c15f96b74bd6208256f112049ab20fd6da510f27f82cb78323a77"
 "checksum libgit2-sys 0.6.9 (registry+https://github.com/rust-lang/crates.io-index)" = "a3aaa20337a0e79fb75180b6a1970c1f7cff9a413f570d6b999b38a5d5d54e81"
 "checksum libssh2-sys 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)" = "91e135645c2e198a39552c8c7686bb5b83b1b99f64831c040a6c2798a1195934"
 "checksum libz-sys 1.0.13 (registry+https://github.com/rust-lang/crates.io-index)" = "e5ee912a45d686d393d5ac87fac15ba0ba18daae14e8e7543c63ebf7fb7e970c"
 "checksum log 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)" = "5141eca02775a762cc6cd564d8d2c50f67c0ea3a372cbf1c51592b3e029e10ad"
+"checksum lzma-sys 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "506a25e3491881f47407458f95429d153437d3a5bc4685c747de69e1ec7e897d"
 "checksum matches 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "efd7622e3022e1a6eaa602c4cea8912254e5582c9c692e9167714182244801b1"
 "checksum memchr 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "1dbccc0e46f1ea47b9f17e6d67c5a96bd27030519c519c9c91327e31275a47b4"
 "checksum mime 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "5514f038123342d01ee5f95129e4ef1e0470c93bc29edf058a46f9ee3ba6737e"
@@ -847,7 +883,7 @@ dependencies = [
 "checksum redox_syscall 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)" = "29dbdfd4b9df8ab31dec47c6087b7b13cbf4a776f335e4de8efba8288dda075b"
 "checksum regex 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "4278c17d0f6d62dfef0ab00028feb45bd7d2102843f80763474eeb1be8a10c01"
 "checksum regex-syntax 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2f9191b1f57603095f105d317e375d19b1c9c5c3185ea9633a99a6dcbed04457"
-"checksum reqwest 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "3bef9ed8fdfcc30947d6b774938dc0c3f369a474efe440df2c7f278180b2d2e6"
+"checksum reqwest 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9cb954661dacf3c20199315b996af8f3bf93c689b38a94d65804c2896265f9f3"
 "checksum rustc-demangle 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "3058a43ada2c2d0b92b3ae38007a2d0fa5e9db971be260e0171408a4ff471c95"
 "checksum rustc-serialize 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)" = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
 "checksum rustc_version 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "c5f5376ea5e30ce23c03eb77cbe4962b988deead10910c372b226388b594c084"
@@ -884,3 +920,4 @@ dependencies = [
 "checksum winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "167dc9d6949a9b857f3451275e911c3f44255842c1f7a76f33c55103a909087a"
 "checksum winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2d315eee3b34aca4797b2da6b13ed88266e6d612562a0c46390af8299fc699bc"
 "checksum xattr 0.1.11 (registry+https://github.com/rust-lang/crates.io-index)" = "5f04de8a1346489a2f9e9bd8526b73d135ec554227b17568456e86aa35b6f3fc"
+"checksum xz2 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "e9510bdf100731599107c61f77daf46713a69a568f75458999c1f9dbf6ba25b0"
