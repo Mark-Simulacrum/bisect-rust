@@ -42,7 +42,7 @@ fn test_commit(commit: &Commit, test_case: &Path, triple: &str, preserve_sysroot
     let sysroot = Sysroot::install(commit, triple, preserve_sysroots)?;
 
     let status = sysroot.command(test_case).status()?;
-    info!("tested {} from {}: {}", commit.id, commit.date.to_rfc2822(), status.success());
+    info!("tested {} from {}: test failed: {}", commit.sha, commit.date.to_rfc2822(), status.success());
     Ok(status.success())
 }
 
@@ -99,7 +99,7 @@ fn run() -> Result<i32> {
 
     println!("Getting commits from the git checkout");
     let commits = try!(git::get_commits_between(START, END));
-    assert_eq!(commits.first().expect("at least one commit").sha(), START);
+    assert_eq!(commits.first().expect("at least one commit").sha, START);
     println!("Searching in {} commits; about {} steps",
         commits.len(),
         commits.len().next_power_of_two().trailing_zeros());
@@ -108,7 +108,7 @@ fn run() -> Result<i32> {
         test_commit(commit, &test_case, &triple, preserve_sysroots).unwrap()
     });
 
-    println!("searched commits {} through {}", commits.first().unwrap().id, commits.last().unwrap().id);
+    println!("searched commits {} through {}", commits.first().unwrap().sha, commits.last().unwrap().sha);
     println!("regression in {:?}; {:?}", found, commits.get(found));
 
     Ok(0)

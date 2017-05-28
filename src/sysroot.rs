@@ -34,7 +34,6 @@ impl Sysroot {
         command
             .env_clear()
             .env("PATH", env::var("PATH").unwrap_or_default())
-            .env("CARGO_HOME", env::var("CARGO_HOME").unwrap_or_default())
             .env("CARGO", &self.cargo)
             .env("CARGO_RELATIVE", &self.cargo.strip_prefix(&env::current_dir().unwrap()).unwrap())
             .env("RUSTC", &self.rustc)
@@ -43,7 +42,7 @@ impl Sysroot {
     }
 
     pub fn install(commit: &Commit, triple: &str, preserve: bool) -> Result<Self> {
-        let sha : &str = &commit.sha();
+        let sha: &str = &commit.sha;
         let unpack_into = format!("cache");
 
         let cargo_sha = if commit.date < UTC.ymd(2017, 3, 20).and_hms(0, 0, 0) {
@@ -120,6 +119,7 @@ impl SysrootDownload {
     }
 
     fn get_module(&self, module: &str) -> Result<Box<Read>> {
+        info!("Getting {} for {}", module, self.sha(module));
         for url in MODULE_URLS {
             let url = url
                 .replace("@MODULE@", module)
