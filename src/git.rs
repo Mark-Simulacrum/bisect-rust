@@ -88,7 +88,7 @@ pub fn get_commits_between(first_commit: &str, last_commit: &str) -> Result<Vec<
         match current.parents().next() {
             Some(c) => {
                 if c.author().name() != Some("bors") {
-                    warn!("{:?} has non-bors author: {:?}, skipping", c.id(), c.author().name());
+                    debug!("{:?} has non-bors author: {:?}, skipping", c.id(), c.author().name());
                     current = c.parents().next().unwrap();
                     continue;
                 }
