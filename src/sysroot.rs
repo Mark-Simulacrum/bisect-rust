@@ -23,6 +23,7 @@ pub struct Sysroot {
     pub cargo: PathBuf,
     pub triple: String,
     pub preserve: bool,
+    pub used_fallback_cargo: bool,
 }
 
 impl Sysroot {
@@ -44,12 +45,13 @@ impl Sysroot {
     pub fn install(commit: &Commit, triple: &str, preserve: bool) -> Result<Self> {
         let sha: &str = &commit.sha;
         let unpack_into = format!("cache");
+        let mut used_fallback_cargo = false;
 
         let cargo_sha = if commit.date < UTC.ymd(2017, 3, 20).and_hms(0, 0, 0) {
             // Versions of rustc older than Mar 20 have bugs in
             // their cargo. Use a known-good cargo for older rustcs
             // instead.
-            warn!("using fallback cargo");
+            used_fallback_cargo = true;
             "53eb08bedc8719844bb553dbe1a39d9010783ff5"
         } else {
             sha
@@ -69,7 +71,7 @@ impl Sysroot {
         download.get_and_extract("rust-std", true)?;
         download.get_and_extract("cargo", false)?;
 
-        download.into_sysroot()
+        download.into_sysroot(used_fallback_cargo)
     }
 }
 
@@ -98,7 +100,7 @@ const MODULE_URLS: &[&str] = &[
 ];
 
 impl SysrootDownload {
-    fn into_sysroot(self) -> Result<Sysroot> {
+    fn into_sysroot(self, used_fallback_cargo: bool) -> Result<Sysroot> {
         Ok(Sysroot {
             rustc: self.directory.join(&self.rust_sha).join("rustc/bin/rustc").canonicalize()
                 .chain_err(|| format!("failed to canonicalize rustc path for {}", self.rust_sha))?,
@@ -107,6 +109,7 @@ impl SysrootDownload {
             sha: self.rust_sha,
             preserve: self.save_download,
             triple: self.triple,
+            used_fallback_cargo,
         })
     }
 
