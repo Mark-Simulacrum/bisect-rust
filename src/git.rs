@@ -1,12 +1,16 @@
 //! Get git commits with help of the libgit2 library
 
-const RUST_SRC_REPO: &str = env!("RUST_SRC_REPO");
+const RUST_SRC_URL: &str = "https://github.com/rust-lang/rust";
+const RUST_SRC_REPO: Option<&str> = option_env!("RUST_SRC_REPO");
+
+use std::path::Path;
 
 use chrono::{DateTime, TimeZone, UTC};
+use git2::{Repository, Oid, Commit as Git2Commit};
+use git2::build::RepoBuilder;
 
 use errors::Result;
 
-use git2::{Repository, Oid, Commit as Git2Commit};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Commit {
@@ -36,10 +40,27 @@ fn lookup_rev<'rev>(repo: &'rev Repository, rev: &str) -> Result<Git2Commit<'rev
     bail!("Could not find a commit for revision specifier '{}'", rev)
 }
 
+fn get_repo() -> Result<Repository> {
+    let loc = Path::new("rust.git");
+    match (RUST_SRC_REPO, loc.exists()) {
+        (Some(_), _) | (_, true) => {
+            let repo = Repository::open(RUST_SRC_REPO.map(Path::new).unwrap_or(loc))?;
+            {
+                let mut remote = repo.find_remote("origin").or_else(|_| repo.remote_anonymous("origin"))?;
+                remote.fetch(&["master"], None, None)?;
+            }
+            Ok(repo)
+        }
+        (None, false) => {
+            Ok(RepoBuilder::new().bare(true).clone(RUST_SRC_URL, Path::new("rust.git"))?)
+        }
+    }
+}
+
 /// Returns the bors merge commits between the two specified boundaries
 /// (boundaries inclusive).
 pub fn get_commits_between(first_commit: &str, last_commit: &str) -> Result<Vec<Commit>> {
-    let repo = Repository::open(RUST_SRC_REPO)?;
+    let repo = get_repo()?;
     let mut first = lookup_rev(&repo, first_commit)?;
     let last = lookup_rev(&repo, last_commit)?;
 
