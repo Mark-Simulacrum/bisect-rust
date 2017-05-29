@@ -1,6 +1,7 @@
 //! Download and manage sysroots.
 
 use std::env;
+use std::fmt;
 use std::fs::{self, File};
 use std::io::{self, BufRead, Read, BufReader};
 use std::path::{Path, PathBuf};
@@ -67,9 +68,9 @@ impl Sysroot {
             triple: triple.to_string(),
         };
 
-        download.get_and_extract("rustc", false)?;
-        download.get_and_extract("rust-std", true)?;
-        download.get_and_extract("cargo", false)?;
+        download.get_and_extract("rustc")?;
+        download.get_and_extract("rust-std")?;
+        download.get_and_extract("cargo")?;
 
         download.into_sysroot(used_fallback_cargo)
     }
@@ -84,6 +85,7 @@ impl Drop for Sysroot {
     }
 }
 
+#[derive(Debug, Clone)]
 struct SysrootDownload {
     directory: PathBuf,
     save_download: bool,
@@ -99,6 +101,118 @@ const MODULE_URLS: &[&str] = &[
     "https://s3.amazonaws.com/rust-lang-ci/rustc-builds/@SHA@/@MODULE@-1.16.0-dev-@TRIPLE@.tar.gz",
 ];
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+enum ModuleVariant {
+    Cargo,
+    Rustc,
+    Std
+}
+
+impl fmt::Display for ModuleVariant {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            ModuleVariant::Cargo => write!(f, "cargo"),
+            ModuleVariant::Rustc => write!(f, "rustc"),
+            ModuleVariant::Std => write!(f, "rust-std"),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+struct Module<'a> {
+    variant: ModuleVariant,
+    sysroot: &'a SysrootDownload,
+}
+
+impl<'a> Module<'a> {
+    fn sha(&self) -> &str {
+        match self.variant {
+            ModuleVariant::Cargo => &self.sysroot.cargo_sha,
+            _ => &self.sysroot.rust_sha,
+        }
+    }
+
+    fn urls(&self) -> Vec<String> {
+        MODULE_URLS.iter().map(|url| {
+            url.replace("@MODULE@", &self.variant.to_string())
+               .replace("@SHA@", self.sha())
+               .replace("@TRIPLE@", &self.sysroot.triple)
+        }).collect()
+    }
+
+    fn decompress<'b, R: BufRead + 'b>(&self, reader: R, extension: &str) -> Result<Box<Read + 'b>> {
+        if extension == "gz" {
+            Ok(Box::new(GzDecoder::new(reader)?))
+        } else if extension == "xz" {
+            Ok(Box::new(XzDecoder::new(reader)))
+        } else {
+            bail!("unknown extension {}", extension);
+        }
+    }
+
+    fn get(&self) -> Result<()> {
+        let archive_path = |extension| {
+            self.sysroot.directory.join(format!("{}-{}.tar.{}",
+                self.sha(), self.variant, extension))
+        };
+        for &extension in &["xz", "gz"] {
+            let archive_path = archive_path(extension);
+
+            let reader = if archive_path.exists() {
+                BufReader::new(File::open(&archive_path)?)
+            } else {
+                continue;
+            };
+            match self.decompress(reader, extension)
+                .and_then(|reader| self.sysroot.extract(self, reader)) {
+                Ok(()) => return Ok(()),
+                Err(err) => {
+                    warn!("extracting {} failed: {:?}", archive_path.display(), err);
+                    fs::remove_file(archive_path)?;
+                    continue;
+                }
+            }
+        }
+
+        for url in self.urls() {
+            let extension = if url.ends_with("gz") { "gz" } else { "xz" };
+
+            debug!("requesting: {}", url);
+            let resp = reqwest::get(&url)?;
+            debug!("{}", resp.status());
+            let mut reader = if resp.status().is_success() {
+                BufReader::new(resp)
+            } else {
+                continue;
+            };
+            let archive_path = archive_path(extension);
+
+            let reader: Box<BufRead> = if self.sysroot.save_download && !archive_path.exists() {
+                let mut file = File::create(&archive_path)?;
+                io::copy(&mut reader, &mut file)?;
+                Box::new(BufReader::new(File::open(&archive_path)?))
+            } else {
+                Box::new(reader)
+            };
+
+            match self.decompress(reader, extension)
+                .and_then(|reader| self.sysroot.extract(self, reader)) {
+                Ok(()) => return Ok(()),
+                Err(err) => {
+                    warn!("extracting {} failed: {:?}", url, err);
+                    if self.sysroot.save_download {
+                        fs::remove_file(archive_path)?;
+                    }
+                    continue;
+                }
+            }
+        }
+
+        bail!("unable to download sha {} triple {} module {}",
+            self.sha(), self.sysroot.triple, self.variant);
+    }
+}
+
 impl SysrootDownload {
     fn into_sysroot(self, used_fallback_cargo: bool) -> Result<Sysroot> {
         Ok(Sysroot {
@@ -113,61 +227,24 @@ impl SysrootDownload {
         })
     }
 
-    fn sha<'a>(&'a self, module: &str) -> &'a str {
-        if module == "cargo" {
-            &self.cargo_sha
-        } else {
-            &self.rust_sha
-        }
+    fn get_module(&self, module: &str) -> Result<()> {
+        Module {
+            variant: match module {
+                "cargo" => ModuleVariant::Cargo,
+                "rustc" => ModuleVariant::Rustc,
+                "rust-std" => ModuleVariant::Std,
+                _ => panic!("unknown module variant: {}", module),
+            },
+            sysroot: self,
+        }.get()
     }
 
-    fn get_module(&self, module: &str) -> Result<Box<Read>> {
-        info!("Getting {} for {}", module, self.sha(module));
-        for url in MODULE_URLS {
-            let url = url
-                .replace("@MODULE@", module)
-                .replace("@SHA@", self.sha(module))
-                .replace("@TRIPLE@", &self.triple);
-
-            let extension = if url.ends_with("gz") { "gz" } else { "xz" };
-            let archive_path = self.directory.join(format!("{}-{}.tar.{}",
-                    self.sha(module), module, extension));
-
-            let mut reader: Box<BufRead> = if archive_path.exists() {
-                Box::new(BufReader::new(File::open(&archive_path)?))
-            } else {
-                debug!("requesting: {}", url);
-                let resp = reqwest::get(&url)?;
-                debug!("{}", resp.status());
-                if resp.status().is_success() {
-                    Box::new(BufReader::new(resp))
-                } else {
-                    continue;
-                }
-            };
-
-            let reader: Box<BufRead> = if self.save_download && !archive_path.exists() {
-                let mut file = File::create(&archive_path)?;
-                io::copy(&mut reader, &mut file)?;
-                Box::new(BufReader::new(File::open(&archive_path)?))
-            } else {
-                reader
-            };
-
-            let reader: Box<Read> = if extension == "gz" {
-                Box::new(GzDecoder::new(reader)?)
-            } else if extension == "xz" {
-                Box::new(XzDecoder::new(reader))
-            } else {
-                bail!("unknown file extension on URL: {:?}", url);
-            };
-            return Ok(reader);
-        }
-        bail!("unable to download sha {} triple {} module {}", self.sha(module), self.triple, module);
+    fn get_and_extract(&self, module: &str) -> Result<()> {
+        self.get_module(module)
     }
 
-    fn get_and_extract(&self, module: &str, is_std: bool) -> Result<()> {
-        let reader = self.get_module(module)?;
+    fn extract(&self, module: &Module, reader: Box<Read>) -> Result<()> {
+        let is_std = module.variant == ModuleVariant::Std;
         let mut archive = Archive::new(reader);
         let std_prefix = format!("rust-std-{}/lib/rustlib", self.triple);
 

@@ -42,7 +42,7 @@ fn test_commit(commit: &Commit, test_case: &Path, triple: &str, preserve_sysroot
     let sysroot = Sysroot::install(commit, triple, preserve_sysroots)?;
 
     let status = sysroot.command(test_case).status()?;
-    info!("tested {} from {}: test failed: {}", commit.sha, commit.date.to_rfc2822(), status.success());
+    info!("tested {:} from {}: test failed: {}", &commit.sha[0..9], commit.date.to_rfc2822(), status.success());
     Ok(status.success())
 }
 
