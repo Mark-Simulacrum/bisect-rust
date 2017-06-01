@@ -155,8 +155,8 @@ impl<'a> Module<'a> {
 
     fn get(&self) -> Result<()> {
         let archive_path = |extension| {
-            self.sysroot.directory.join(format!("{}-{}.tar.{}",
-                self.sha(), self.variant, extension))
+            self.sysroot.directory.join(format!("{}-{}-{}.tar.{}",
+                self.sha(), self.sysroot.triple, self.variant, extension))
         };
         for &extension in &["xz", "gz"] {
             let archive_path = archive_path(extension);
