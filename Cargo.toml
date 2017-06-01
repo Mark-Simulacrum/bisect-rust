@@ -1,5 +1,5 @@
 [package]
-authors = ["Mark Simulacrum <mark.simulacrum@gmail.com>"]
+authors = ["Mark Simulacrum <mark.simulacrum@gmail.com>", "The Rust Infrastructure Team"]
 name = "rust_sysroot"
 version = "0.1.0"
 
