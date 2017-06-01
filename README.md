@@ -11,7 +11,7 @@ cd test
 docker build -t bisector .
 cd ..
 cargo build --release
-RUST_LOG=bisect_rust=info  target/release/bisect-rust bisect --preserve --test test.sh
+RUST_LOG=bisect_rust=info  target/release/bisect --preserve --test test.sh
 ```
 
 For each run, copy test.example.sh into test.sh and configure it to match your test case.

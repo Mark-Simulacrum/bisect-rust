@@ -1,6 +1,6 @@
 [package]
 authors = ["Mark Simulacrum <mark.simulacrum@gmail.com>"]
-name = "bisect-rust"
+name = "rust_sysroot"
 version = "0.1.0"
 
 [dependencies]
