@@ -25,6 +25,7 @@ pub struct Sysroot {
     pub triple: String,
     pub preserve: bool,
     pub used_fallback_cargo: bool,
+    pub is_saving_sysroot: bool,
 }
 
 impl Sysroot {
@@ -43,7 +44,7 @@ impl Sysroot {
         command
     }
 
-    pub fn install(commit: &Commit, triple: &str, preserve: bool) -> Result<Self> {
+    pub fn install(commit: &Commit, triple: &str, preserve: bool, is_saving_sysroot: bool) -> Result<Self> {
         let sha: &str = &commit.sha;
         let unpack_into = format!("cache");
         let mut used_fallback_cargo = false;
@@ -72,16 +73,18 @@ impl Sysroot {
         download.get_and_extract("rust-std")?;
         download.get_and_extract("cargo")?;
 
-        download.into_sysroot(used_fallback_cargo)
+        download.into_sysroot(used_fallback_cargo, is_saving_sysroot)
     }
 }
 
 impl Drop for Sysroot {
     fn drop(&mut self) {
-        fs::remove_dir_all(format!("cache/{}", self.sha)).unwrap_or_else(|err| {
-            info!("failed to remove {:?}, please do so manually: {:?}",
-                format!("cache/{}", self.sha), err);
-        });
+        if !self.is_saving_sysroot {
+            fs::remove_dir_all(format!("cache/{}", self.sha)).unwrap_or_else(|err| {
+                info!("failed to remove {:?}, please do so manually: {:?}",
+                    format!("cache/{}", self.sha), err);
+            });
+        }
     }
 }
 
@@ -214,7 +217,7 @@ impl<'a> Module<'a> {
 }
 
 impl SysrootDownload {
-    fn into_sysroot(self, used_fallback_cargo: bool) -> Result<Sysroot> {
+    fn into_sysroot(self, used_fallback_cargo: bool, is_saving_sysroot: bool) -> Result<Sysroot> {
         Ok(Sysroot {
             rustc: self.directory.join(&self.rust_sha).join("rustc/bin/rustc").canonicalize()
                 .chain_err(|| format!("failed to canonicalize rustc path for {}", self.rust_sha))?,
@@ -224,6 +227,7 @@ impl SysrootDownload {
             preserve: self.save_download,
             triple: self.triple,
             used_fallback_cargo,
+            is_saving_sysroot,
         })
     }
 

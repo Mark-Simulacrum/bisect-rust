@@ -7,11 +7,11 @@ In order to use it, you will need to get a local clone of the `rust-lang/rust` r
 Then, the recommended approach is to get Docker, and run the following command:
 
 ```
-RUST_LOG=bisect_rust=info \
-    RUST_SRC_REPO=REPO_URL_HERE \
-    cargo run -- --preserve --triple x86_64-unknown-linux-gnu --test test.sh
+cd test
+docker build -t bisector .
+cd ..
+cargo build --release
+RUST_LOG=bisect_rust=info  target/release/bisect-rust bisect --preserve --test test.sh
 ```
 
-With the test.sh in this repository, this will run a docker container to isolate the compilation of
-the cloned crate. You'll need to update the directory of the crate (`{{GIT_DIRECTORY}}`) and the
-error message you're looking for (`{{ERROR_MESSAGE}}`).
+For each run, copy test.example.sh into test.sh and configure it to match your test case.

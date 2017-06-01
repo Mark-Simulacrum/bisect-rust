@@ -39,7 +39,7 @@ use sysroot::Sysroot;
 
 // return true if commit is successfully broken
 fn test_commit(commit: &Commit, test_case: &Path, triple: &str, preserve_sysroots: bool) -> Result<bool> {
-    let sysroot = Sysroot::install(commit, triple, preserve_sysroots)?;
+    let sysroot = Sysroot::install(commit, triple, preserve_sysroots, false)?;
 
     let status = sysroot.command(test_case).status()?;
     info!("tested {:} from {}: test failed: {}", &commit.sha[0..9], commit.date.to_rfc2822(), status.success());
@@ -82,17 +82,18 @@ fn run() -> Result<i32> {
        (version: "0.1")
        (author: "The Rust Infrastructure Team")
        (about: "Find PRs introducing regressions into Rust")
-       (@arg preserve_sysroots: -p --preserve "Don't delete sysroots after running.")
-       (@arg test: +required +takes_value --test "File to run to test for regression")
-       (@arg triple: +takes_value --triple "triple to use for downloads")
+       (@subcommand bisect =>
+            (about: "bisect")
+            (@arg preserve_sysroots: -p --preserve "Don't delete sysroots after running.")
+            (@arg test: +required +takes_value --test "File to run to test for regression")
+            (@arg triple: +takes_value --triple "triple to use for downloads")
+       )
+       (@subcommand unpack_sysroot =>
+            (about: "controls testing features")
+            (@arg commit: --commit +takes_value +required "SHA of sysroot")
+            (@arg triple: +takes_value --triple "triple to use for downloads")
+       )
     ).get_matches();
-
-    let preserve_sysroots = matches.is_present("preserve_sysroots");
-    let test_case = Path::new(matches.value_of_os("test").unwrap()).canonicalize()?;
-    let triple = match matches.value_of("triple") {
-        Some(x) => x.to_string(),
-        None => get_host_triple()?,
-    };
 
     const START: &str = "927c55d86b0be44337f37cf5b0a76fb8ba86e06c";
     const END: &str = "master";
@@ -100,16 +101,44 @@ fn run() -> Result<i32> {
     println!("Getting commits from the git checkout");
     let commits = try!(git::get_commits_between(START, END));
     assert_eq!(commits.first().expect("at least one commit").sha, START);
-    println!("Searching in {} commits; about {} steps",
-        commits.len(),
-        commits.len().next_power_of_two().trailing_zeros());
 
-    let found = least_satisfying(&commits, |commit| {
-        test_commit(commit, &test_case, &triple, preserve_sysroots).unwrap()
-    });
+    let (name, matches) = matches.subcommand();
+    let matches = matches.expect("a subcommand");
+    match name {
+        "bisect" => {
+            let preserve_sysroots = matches.is_present("preserve_sysroots");
+            let test_case = Path::new(matches.value_of_os("test").expect("--test")).canonicalize()?;
+            let triple = match matches.value_of("triple") {
+                Some(x) => x.to_string(),
+                None => get_host_triple()?,
+            };
 
-    println!("searched commits {} through {}", commits.first().unwrap().sha, commits.last().unwrap().sha);
-    println!("regression in {:?}; {:?}", found, commits.get(found));
+            println!("Searching in {} commits; about {} steps",
+                commits.len(),
+                commits.len().next_power_of_two().trailing_zeros());
+
+            let found = least_satisfying(&commits, |commit| {
+                test_commit(commit, &test_case, &triple, preserve_sysroots).unwrap()
+            });
+
+            println!("searched commits {} through {}", commits.first().unwrap().sha, commits.last().unwrap().sha);
+            println!("regression in {:?}; {:?}", found, commits.get(found));
+        }
+        "unpack_sysroot" => {
+            let triple = match matches.value_of("triple") {
+                Some(x) => x.to_string(),
+                None => get_host_triple()?,
+            };
+            let commit = matches.value_of("commit").unwrap();
+            let commit = commits.iter().find(|c| c.sha.starts_with(commit)).expect("commit passed to be bors commit");
+
+            let _sysroot = Sysroot::install(commit, &triple, false, true)?;
+
+            println!("Sysroot can be found in cache/{}", commit.sha);
+            println!("Please delete it when finished.");
+        }
+        other => panic!("unknown subcommand: {}", other),
+    }
 
     Ok(0)
 }
