@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::ffi::OsStr;
 
-use chrono::{TimeZone, UTC};
+use chrono::{TimeZone, Utc};
 use flate2::bufread::GzDecoder;
 use xz2::bufread::XzDecoder;
 use reqwest;
@@ -49,7 +49,7 @@ impl Sysroot {
         let unpack_into = format!("cache");
         let mut used_fallback_cargo = false;
 
-        let cargo_sha = if commit.date < UTC.ymd(2017, 3, 20).and_hms(0, 0, 0) {
+        let cargo_sha = if commit.date < Utc.ymd(2017, 3, 20).and_hms(0, 0, 0) {
             // Versions of rustc older than Mar 20 have bugs in
             // their cargo. Use a known-good cargo for older rustcs
             // instead.

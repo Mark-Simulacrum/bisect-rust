@@ -5,7 +5,7 @@ const RUST_SRC_REPO: Option<&str> = option_env!("RUST_SRC_REPO");
 
 use std::path::Path;
 
-use chrono::{DateTime, TimeZone, UTC};
+use chrono::{DateTime, TimeZone, Utc};
 use git2::{Repository, Commit as Git2Commit};
 use git2::build::RepoBuilder;
 
@@ -14,7 +14,7 @@ use errors::Result;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Commit {
     pub sha: String,
-    pub date: DateTime<UTC>,
+    pub date: DateTime<Utc>,
     pub summary: String,
 }
 
@@ -23,7 +23,7 @@ impl Commit {
     fn from_git2_commit(commit: &mut Git2Commit) -> Self {
         Commit {
             sha: commit.id().to_string(),
-            date: UTC.timestamp(commit.time().seconds(), 0),
+            date: Utc.timestamp(commit.time().seconds(), 0),
             summary: String::from_utf8_lossy(commit.summary_bytes().unwrap()).to_string(),
         }
     }
