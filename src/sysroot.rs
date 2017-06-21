@@ -44,6 +44,46 @@ impl Sysroot {
         command
     }
 
+    pub fn with_local_rustc(commit: &Commit, rustc: &str, triple: &str, preserve: bool, is_saving_sysroot: bool) -> Result<Self> {
+        let sha: &str = &commit.sha;
+        let unpack_into = format!("cache");
+        let mut used_fallback_cargo = false;
+
+        let cargo_sha = if commit.date < Utc.ymd(2017, 3, 20).and_hms(0, 0, 0) {
+            // Versions of rustc older than Mar 20 have bugs in
+            // their cargo. Use a known-good cargo for older rustcs
+            // instead.
+            used_fallback_cargo = true;
+            "53eb08bedc8719844bb553dbe1a39d9010783ff5"
+        } else {
+            sha
+        };
+
+        fs::create_dir_all(&unpack_into)?;
+
+        let download = SysrootDownload {
+            directory: unpack_into.into(),
+            save_download: preserve,
+            rust_sha: sha.to_string(),
+            cargo_sha: cargo_sha.to_string(),
+            triple: triple.to_string(),
+        };
+
+        download.get_and_extract("cargo")?;
+
+        Ok(Sysroot {
+            rustc: PathBuf::from(rustc).canonicalize()
+                .chain_err(|| format!("failed to canonicalize rustc path: {}", rustc))?,
+            cargo: download.directory.join(&download.rust_sha).join("cargo/bin/cargo").canonicalize()
+                .chain_err(|| format!("failed to canonicalize cargo path for {}", download.cargo_sha))?,
+            sha: download.rust_sha,
+            preserve: download.save_download,
+            triple: download.triple,
+            used_fallback_cargo,
+            is_saving_sysroot,
+        })
+    }
+
     pub fn install(commit: &Commit, triple: &str, preserve: bool, is_saving_sysroot: bool) -> Result<Self> {
         let sha: &str = &commit.sha;
         let unpack_into = format!("cache");
