@@ -21,6 +21,7 @@ use errors::{Result, ResultExt};
 pub struct Sysroot {
     pub sha: String,
     pub rustc: PathBuf,
+    pub rustdoc: PathBuf,
     pub cargo: PathBuf,
     pub triple: String,
     pub preserve: bool,
@@ -40,7 +41,9 @@ impl Sysroot {
             .env("CARGO", &self.cargo)
             .env("CARGO_RELATIVE", &self.cargo.strip_prefix(&env::current_dir().unwrap()).unwrap())
             .env("RUSTC", &self.rustc)
-            .env("RUSTC_RELATIVE", &self.rustc.strip_prefix(&env::current_dir().unwrap()).unwrap());
+            .env("RUSTC_RELATIVE", &self.rustc.strip_prefix(&env::current_dir().unwrap()).unwrap())
+            .env("RUSTDOC", &self.rustdoc)
+            .env("RUSTDOC_RELATIVE", &self.rustdoc.strip_prefix(&env::current_dir().unwrap()).unwrap());
         command
     }
 
@@ -74,6 +77,9 @@ impl Sysroot {
         Ok(Sysroot {
             rustc: PathBuf::from(rustc).canonicalize()
                 .chain_err(|| format!("failed to canonicalize rustc path: {}", rustc))?,
+            rustdoc: PathBuf::from(rustc).canonicalize()
+                .chain_err(|| format!("failed to canonicalize rustc path: {}", rustc))?
+                .parent().unwrap().join("rustdoc"),
             cargo: download.directory.join(&download.rust_sha).join("cargo/bin/cargo").canonicalize()
                 .chain_err(|| format!("failed to canonicalize cargo path for {}", download.cargo_sha))?,
             sha: download.rust_sha,
@@ -261,6 +267,8 @@ impl SysrootDownload {
         Ok(Sysroot {
             rustc: self.directory.join(&self.rust_sha).join("rustc/bin/rustc").canonicalize()
                 .chain_err(|| format!("failed to canonicalize rustc path for {}", self.rust_sha))?,
+            rustdoc: self.directory.join(&self.rust_sha).join("rustc/bin/rustdoc").canonicalize()
+                .chain_err(|| format!("failed to canonicalize rustdoc path for {}", self.rust_sha))?,
             cargo: self.directory.join(&self.rust_sha).join("cargo/bin/cargo").canonicalize()
                 .chain_err(|| format!("failed to canonicalize cargo path for {}", self.cargo_sha))?,
             sha: self.rust_sha,
