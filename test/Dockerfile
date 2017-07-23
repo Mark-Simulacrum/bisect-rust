@@ -6,7 +6,11 @@ RUN apt-get update && \
     ca-certificates \
     libssl-dev \
     libstdc++6 \
-    pkg-config
+    pkg-config \
+    cmake \
+    curl \
+    git \
+    python
 RUN mkdir /source
 VOLUME ["/source"]
 WORKDIR /source
