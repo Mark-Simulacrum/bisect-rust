@@ -144,11 +144,8 @@ struct SysrootDownload {
 }
 
 const MODULE_URLS: &[&str] = &[
-    "https://s3.amazonaws.com/rust-lang-ci/rustc-builds/@SHA@/@MODULE@-nightly-@TRIPLE@.tar.xz",
-    "https://s3.amazonaws.com/rust-lang-ci/rustc-builds/@SHA@/@MODULE@-nightly-@TRIPLE@.tar.gz",
-    "https://s3.amazonaws.com/rust-lang-ci/rustc-builds/@SHA@/dist/@MODULE@-nightly-@TRIPLE@.tar.gz",
-    "https://s3.amazonaws.com/rust-lang-ci/rustc-builds/@SHA@/@MODULE@-1.16.0-dev-@TRIPLE@.tar.gz",
-    "https://s3.amazonaws.com/rust-lang-ci/rustc-builds-try/@SHA@/@MODULE@-nightly-@TRIPLE@.tar.xz",
+    "https://s3-us-west-1.amazonaws.com/rust-lang-ci2/rustc-builds/@SHA@/@MODULE@-nightly-@TRIPLE@.tar.xz",
+    "https://s3-us-west-1.amazonaws.com/rust-lang-ci2/rustc-builds-try/@SHA@/@MODULE@-nightly-@TRIPLE@.tar.xz",
 ];
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
