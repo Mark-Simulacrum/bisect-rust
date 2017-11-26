@@ -21,7 +21,7 @@ quick_main!(run);
 use rust_sysroot::sysroot::Sysroot;
 use rust_sysroot::git::Commit;
 use chrono::{Utc, TimeZone};
-use rust_sysroot::get_host_triple;
+use rust_sysroot::{get_host_triple, EPOCH_COMMIT};
 
 fn run() -> Result<i32> {
     env_logger::init().expect("logger initialization successful");
@@ -41,7 +41,7 @@ fn run() -> Result<i32> {
     };
     let commit = matches.value_of("commit").unwrap();
     let commit = if !matches.is_present("skip_validation") {
-        let commits = rust_sysroot::get_commits()?;
+        let commits = rust_sysroot::get_commits(EPOCH_COMMIT, "master")?;
         commits.into_iter()
             .find(|c| c.sha.starts_with(commit))
             .expect("commit passed to be bors commit")

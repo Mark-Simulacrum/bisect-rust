@@ -26,7 +26,7 @@ use std::path::Path;
 
 use rust_sysroot::git::Commit;
 use rust_sysroot::sysroot::Sysroot;
-use rust_sysroot::get_host_triple;
+use rust_sysroot::{get_host_triple, EPOCH_COMMIT};
 
 // return true if commit is successfully broken
 fn test_commit(commit: &Commit, test_case: &Path, triple: &str, preserve_sysroots: bool) -> Result<bool> {
@@ -68,6 +68,8 @@ fn run() -> Result<i32> {
        (@arg preserve_sysroots: -p --preserve "Don't delete sysroots after running.")
        (@arg test: +required +takes_value --test "File to run to test for regression")
        (@arg triple: +takes_value --triple "triple to use for downloads")
+       (@arg start: +takes_value default_value(EPOCH_COMMIT) --start "First commit to search from")
+       (@arg end: +takes_value default_value[master] --end "Last commit to search until")
     ).get_matches();
 
     let preserve_sysroots = matches.is_present("preserve_sysroots");
@@ -77,7 +79,9 @@ fn run() -> Result<i32> {
         None => get_host_triple()?,
     };
 
-    let commits = rust_sysroot::get_commits()?;
+    let start = matches.value_of("start").unwrap();
+    let end = matches.value_of("end").unwrap();
+    let commits = rust_sysroot::get_commits(start, end)?;
 
     println!("Searching in {} commits; about {} steps",
         commits.len(),

@@ -37,13 +37,17 @@ pub fn get_host_triple() -> Result<String> {
     Ok(output.lines().find(|l| l.starts_with("host: ")).unwrap()[6..].to_string())
 }
 
-pub fn get_commits() -> Result<Vec<git::Commit>> {
-    const START: &str = "927c55d86b0be44337f37cf5b0a76fb8ba86e06c";
-    const END: &str = "master";
+/// The first commit which build artifacts are made available through the CI for
+/// bisection.
+///
+/// Due to our deletion policy which expires builds after 90 days, the build
+/// artifact of this commit itself is no longer available.
+pub const EPOCH_COMMIT: &str = "927c55d86b0be44337f37cf5b0a76fb8ba86e06c";
 
-    info!("Getting commits from the git checkout");
-    let commits = git::get_commits_between(START, END)?;
-    assert_eq!(commits.first().expect("at least one commit").sha, START);
+pub fn get_commits(start: &str, end: &str) -> Result<Vec<git::Commit>> {
+    info!("Getting commits from the git checkout in {}...{}", start, end);
+    let commits = git::get_commits_between(start, end)?;
+    assert_eq!(commits.first().expect("at least one commit").sha, start);
 
     Ok(commits)
 }
