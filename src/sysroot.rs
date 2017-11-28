@@ -57,9 +57,10 @@ impl Sysroot {
             // their cargo. Use a known-good cargo for older rustcs
             // instead.
             used_fallback_cargo = true;
-            "53eb08bedc8719844bb553dbe1a39d9010783ff5"
+            // get master commit for known-good cargo
+            ::get_commits(::EPOCH_COMMIT, "master")?.pop().unwrap().sha
         } else {
-            sha
+            sha.to_string()
         };
 
         fs::create_dir_all(&unpack_into)?;
@@ -68,7 +69,7 @@ impl Sysroot {
             directory: unpack_into.into(),
             save_download: preserve,
             rust_sha: sha.to_string(),
-            cargo_sha: cargo_sha.to_string(),
+            cargo_sha: cargo_sha,
             triple: triple.to_string(),
         };
 
@@ -100,9 +101,10 @@ impl Sysroot {
             // their cargo. Use a known-good cargo for older rustcs
             // instead.
             used_fallback_cargo = true;
-            "53eb08bedc8719844bb553dbe1a39d9010783ff5"
+            // get master commit for known-good cargo
+            ::get_commits(::EPOCH_COMMIT, "master")?.pop().unwrap().sha
         } else {
-            sha
+            sha.to_string()
         };
 
         fs::create_dir_all(&unpack_into)?;
@@ -111,7 +113,7 @@ impl Sysroot {
             directory: unpack_into.into(),
             save_download: preserve,
             rust_sha: sha.to_string(),
-            cargo_sha: cargo_sha.to_string(),
+            cargo_sha: cargo_sha,
             triple: triple.to_string(),
         };
 
