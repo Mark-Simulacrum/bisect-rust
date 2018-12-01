@@ -24,7 +24,7 @@ use chrono::{Utc, TimeZone};
 use rust_sysroot::{get_host_triple, EPOCH_COMMIT};
 
 fn run() -> Result<i32> {
-    env_logger::init().expect("logger initialization successful");
+    env_logger::init();
 
     let matches = clap_app!(install_sysroot =>
        (version: "0.1")

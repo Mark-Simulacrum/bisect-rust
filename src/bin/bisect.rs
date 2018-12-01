@@ -59,7 +59,7 @@ pub fn least_satisfying<T, P>(slice: &[T], mut predicate: P) -> usize
 }
 
 fn run() -> Result<i32> {
-    env_logger::init().expect("logger initialization successful");
+    env_logger::init();
 
     let matches = clap_app!(bisect =>
        (version: "0.1")
